@@ -17,7 +17,7 @@ services:
           property: connectionString
       - key: REDIS_HOSTPORT
         fromService:
-          type: pserv
+          type: redis
           name: redash-redis
           property: hostport
       - fromGroup: redash-shared-env
@@ -25,6 +25,7 @@ services:
 
   - type: worker
     name: redash-scheduler
+    plan: stater
     env: docker
     dockerCommand: render-redash scheduler
     envVars:
@@ -47,7 +48,7 @@ services:
   - type: worker
     name: redash-worker
     env: docker
-    plan: standard
+    plan: stater
     dockerCommand: render-redash worker
     envVars:
       - key: REDASH_DATABASE_URL
@@ -64,14 +65,9 @@ services:
       - key: QUEUES
         value: "queries,scheduled_queries,schemas"
 
-  - type: pserv
+  - type: redis
     name: redash-redis
-    env: docker
-    repo: https://github.com/render-examples/redis.git
-    disk:
-      name: data
-      mountPath: /var/lib/redis
-      sizeGB: 10
+    ipAllowList: []
 
 envVarGroups:
   - name: redash-shared-env
