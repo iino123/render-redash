@@ -2,6 +2,7 @@ databases:
   - name: redash
     databaseName: redash
     user: redash
+    region: singapore
 
 services:
   # Do not forget to run `render-redash create_db` in Render Shell after creating this service.
@@ -70,32 +71,11 @@ services:
       - key: WORKERS_COUNT
         value: 2
 
-  - type: worker
-    name: redash-default-worker
-    plan: standard
-    region: singapore
-    env: docker
-    dockerCommand: render-redash worker
-    envVars:
-      - key: REDASH_DATABASE_URL
-        fromDatabase:
-          name: redash
-          property: connectionString
-      - key: REDASH_REDIS_URL
-        fromService:
-          type: redis
-          name: redash-redis
-          property: connectionString
-      - fromGroup: redash-shared
-      - fromGroup: redash-mail
-      - key: QUEUES
-        value: "periodic emails default"
-      - key: WORKERS_COUNT
-        value: 1
-
   - type: redis
     name: redash-redis
     plan: free
+    region: singapore
+    maxmemoryPolicy: allkeys-lru
     ipAllowList: []
 
 envVarGroups:
