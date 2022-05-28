@@ -2,29 +2,37 @@ databases:
   - name: redash
     databaseName: redash
     user: redash
+    region: singapore
 
 services:
   # Do not forget to run `render-redash create_db` in Render Shell after creating this service.
+  # If you have upgraded from a previous version, run `render-redash manage db upgrade` instead.
   - type: web
-    name: redash
-    env: docker
+    name: redash-server
     plan: standard
+    region: singapore
+    env: docker
     dockerCommand: render-redash server
+    healthCheckPath: /ping
     envVars:
+      - key: PORT
+        value: 5000
       - key: REDASH_DATABASE_URL
         fromDatabase:
           name: redash
           property: connectionString
-      - key: REDIS_HOSTPORT
+      - key: REDASH_REDIS_URL
         fromService:
-          type: pserv
+          type: redis
           name: redash-redis
-          property: hostport
+          property: connectionString
       - fromGroup: redash-shared
       - fromGroup: redash-mail
 
   - type: worker
     name: redash-scheduler
+    plan: starter
+    region: singapore
     env: docker
     dockerCommand: render-redash scheduler
     envVars:
@@ -32,54 +40,53 @@ services:
         fromDatabase:
           name: redash
           property: connectionString
-      - key: REDIS_HOSTPORT
+      - key: REDASH_REDIS_URL
         fromService:
-          type: pserv
+          type: redis
           name: redash-redis
-          property: hostport
+          property: connectionString
       - fromGroup: redash-shared
       - fromGroup: redash-mail
-      - key: QUEUES
-        value: "celery"
-      - key: WORKERS_COUNT
-        value: 1
 
   - type: worker
     name: redash-worker
+    plan: starter
+    region: singapore
     env: docker
-    plan: standard
     dockerCommand: render-redash worker
     envVars:
       - key: REDASH_DATABASE_URL
         fromDatabase:
           name: redash
           property: connectionString
-      - key: REDIS_HOSTPORT
+      - key: REDASH_REDIS_URL
         fromService:
-          type: pserv
+          type: redis
           name: redash-redis
-          property: hostport
+          property: connectionString
       - fromGroup: redash-shared
       - fromGroup: redash-mail
       - key: QUEUES
         value: "queries,scheduled_queries,schemas"
+      - key: WORKERS_COUNT
+        value: 2
 
-  - type: pserv
+  - type: redis
     name: redash-redis
-    env: docker
-    repo: https://github.com/render-examples/redis.git
-    disk:
-      name: data
-      mountPath: /var/lib/redis
-      sizeGB: 10
+    plan: free
+    region: singapore
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
 
 envVarGroups:
   - name: redash-shared
     envVars:
+      - key: REDASH_COOKIE_SECRET
+        value: "UcRlCHoFyGLMQW4jwp2IWDHLosOcxg8D"
+      - key: REDASH_SECRET_KEY
+        value: "lRGECAlm1vPLAMRkAhZrx2m03OAdh5HF"
       - key: REDASH_LOG_LEVEL
         value: "INFO"
-      - key: REDASH_COOKIE_SECRET
-        generateValue: true
 
   # Uncomment and fill following fields if you wish to set up mailing in Redash.
   # It’s recommended to use some mail service, like Amazon SES or Mailgun

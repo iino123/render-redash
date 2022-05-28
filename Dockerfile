@@ -104,7 +104,6 @@ COPY --from=frontend-builder --chown=redash /frontend/client/dist /app/client/di
 RUN chown redash /app
 USER redash
 
-COPY ./redash/README.md /app/README.md
 COPY ./render-redash.sh /bin/render-redash
 
 
